@@ -27,8 +27,10 @@
 
 #include "kernel.cuh"
 #include "common.h"
+#include "camera.h"
 
 uint g_passNum = 0;
+Camera g_cam;
 
 SDL_Window* g_window = NULL;
 SDL_GLContext g_context;
@@ -55,7 +57,7 @@ void renderFrame()
 	//clear all pixels:
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	launchKernel(g_vbo, g_passNum, WangHash(g_passNum));
+	launchKernel(g_vbo, WangHash(g_passNum), &g_cam);
 
 	//glFlush();
 	glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
@@ -84,7 +86,7 @@ bool init() {
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
 
-	g_window = SDL_CreateWindow("cudaTracer", 600, 300, WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+	g_window = SDL_CreateWindow("Cube World", 600, 300, WIDTH, HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 	if (g_window == NULL) {
 		printf("%s - Window could not be created! SDL Error: %s\n", SDL_GetError());
 		return false;
@@ -125,6 +127,9 @@ bool init() {
 
 	fprintf(stderr, "VBO created  \n");
 
+	// Set camera start position
+	g_cam.setPosition(glm::vec3(0, 0, 295.6));
+	g_cam.setViewportAspectRatio(float(WIDTH) / HEIGHT);
 	return true;
 }
 
@@ -136,16 +141,56 @@ int main(int argc, char** argv){
 	// Event loop
 	bool quit = false;
 	SDL_Event e;
+	int mouseCenter[2] = { 0, 0 };
 
 	SDL_StartTextInput();
 	while (!quit)
 	{
 		while (SDL_PollEvent(&e) != 0) {
-			if (e.type == SDL_QUIT || (e.type == SDL_KEYUP && (e.key.keysym.sym == SDLK_q || e.key.keysym.sym == SDLK_ESCAPE))) {
-
+			if (e.type == SDL_QUIT) {
 				quit = true;
 			}
-		}
+
+			// Handle keyboard
+			else if (e.type == SDL_KEYDOWN) {
+				switch (e.key.keysym.sym) {
+				case SDLK_q:
+				case SDLK_ESCAPE:
+					quit = true;
+					break;
+				case SDLK_a:
+					g_cam.offsetPosition(-g_cam.right() * 5.0f);
+					break;
+				case SDLK_d:
+					g_cam.offsetPosition(g_cam.right() * 5.0f);
+					break;
+				case SDLK_w:
+					g_cam.offsetPosition(g_cam.forward()*5.0f);
+					break;
+				case SDLK_s:
+					g_cam.offsetPosition(-g_cam.forward()*5.0f);
+					break;
+				}
+			}
+
+			// Handle mouse
+			else if (e.type == SDL_MOUSEBUTTONDOWN) {  // On mouse click
+				mouseCenter[0] = e.button.x;
+				mouseCenter[1] = e.button.y;
+
+				SDL_SetRelativeMouseMode(SDL_TRUE);
+			}
+			else if (e.type == SDL_MOUSEBUTTONUP) {  // On mouse up
+				SDL_SetRelativeMouseMode(SDL_FALSE);
+				SDL_WarpMouseInWindow(g_window, mouseCenter[0], mouseCenter[1]);
+			}
+			else if (e.type == SDL_MOUSEMOTION) {
+				if (e.motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+					g_cam.offsetOrientation(0, 0.3f * e.motion.xrel);
+					g_cam.offsetOrientation(0.3f * e.motion.yrel, 0);
+				}
+			}
+		}		
 
 		renderFrame();
 
@@ -170,10 +215,13 @@ int main(int argc, char** argv){
 
 /* TODO
 
+- For keyboard movement, keep track of key down and up and move cam while its still down
+
 - Implement direct light sampling
 - Implement grid accel struct
 - Check framerate when there are no scene objects to check overhead
 - Render text info http://www.sdltutorials.com/sdl-ttf
+- Try using cuda faster math functions https://docs.nvidia.com/cuda/cuda-c-programming-guide/#intrinsic-functions
 
 OPTIMISATIONS
 - Render primary rays at full res and store normal and position in an array
