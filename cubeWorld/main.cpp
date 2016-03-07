@@ -128,7 +128,7 @@ bool init() {
 	fprintf(stderr, "VBO created  \n");
 
 	// Set camera start position
-	g_cam.setPosition(glm::vec3(0, 0, 295.6));
+	g_cam.setPosition(glm::vec3(0, 50, 200));
 	g_cam.setViewportAspectRatio(float(WIDTH) / HEIGHT);
 	return true;
 }
@@ -151,24 +151,11 @@ int main(int argc, char** argv){
 				quit = true;
 			}
 
-			// Handle keyboard
+			// Handle keydowns
 			else if (e.type == SDL_KEYDOWN) {
 				switch (e.key.keysym.sym) {
-				case SDLK_q:
 				case SDLK_ESCAPE:
 					quit = true;
-					break;
-				case SDLK_a:
-					g_cam.offsetPosition(-g_cam.right() * 5.0f);
-					break;
-				case SDLK_d:
-					g_cam.offsetPosition(g_cam.right() * 5.0f);
-					break;
-				case SDLK_w:
-					g_cam.offsetPosition(g_cam.forward()*5.0f);
-					break;
-				case SDLK_s:
-					g_cam.offsetPosition(-g_cam.forward()*5.0f);
 					break;
 				}
 			}
@@ -190,7 +177,22 @@ int main(int argc, char** argv){
 					g_cam.offsetOrientation(0.3f * e.motion.yrel, 0);
 				}
 			}
-		}		
+		}
+
+		// Handle keyboard movement
+		const Uint8* keyState = SDL_GetKeyboardState(NULL);
+		if (keyState[SDL_SCANCODE_A])
+			g_cam.offsetPosition(-g_cam.right() * KEYBOARD_MOVESPEED);
+		if (keyState[SDL_SCANCODE_D])
+			g_cam.offsetPosition(g_cam.right() * KEYBOARD_MOVESPEED);
+		if (keyState[SDL_SCANCODE_W])
+			g_cam.offsetPosition(g_cam.forward() * KEYBOARD_MOVESPEED);
+		if (keyState[SDL_SCANCODE_S])
+			g_cam.offsetPosition(-g_cam.forward() * KEYBOARD_MOVESPEED);
+		if (keyState[SDL_SCANCODE_E])
+			g_cam.offsetPosition(g_cam.up() * KEYBOARD_MOVESPEED);
+		if (keyState[SDL_SCANCODE_Q])
+			g_cam.offsetPosition(-g_cam.up() * KEYBOARD_MOVESPEED);
 
 		renderFrame();
 
@@ -215,13 +217,13 @@ int main(int argc, char** argv){
 
 /* TODO
 
-- For keyboard movement, keep track of key down and up and move cam while its still down
+- Fix box_intersect EPSILON problem
 
 - Implement direct light sampling
-- Implement grid accel struct
 - Check framerate when there are no scene objects to check overhead
 - Render text info http://www.sdltutorials.com/sdl-ttf
 - Try using cuda faster math functions https://docs.nvidia.com/cuda/cuda-c-programming-guide/#intrinsic-functions
+- Make sure am sending rays through the center of each pixel
 
 OPTIMISATIONS
 - Render primary rays at full res and store normal and position in an array
@@ -230,7 +232,7 @@ OPTIMISATIONS
 - Use secondary ray samples from previous frames
 
 - For stereo, for each primary ray, connect the hit point back to the other eye
-
+- Max ray distance
 
 
 
