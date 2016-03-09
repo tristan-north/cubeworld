@@ -217,13 +217,10 @@ int main(int argc, char** argv){
 
 /* TODO
 
-- Fix box_intersect EPSILON problem
-
 - Implement direct light sampling
-- Check framerate when there are no scene objects to check overhead
 - Render text info http://www.sdltutorials.com/sdl-ttf
-- Try using cuda faster math functions https://docs.nvidia.com/cuda/cuda-c-programming-guide/#intrinsic-functions
 - Make sure am sending rays through the center of each pixel
+- Use FCAT to measure frame timings http://www.geforce.co.uk/hardware/technology/fcat/technology
 
 OPTIMISATIONS
 - Render primary rays at full res and store normal and position in an array
@@ -233,8 +230,9 @@ OPTIMISATIONS
 
 - For stereo, for each primary ray, connect the hit point back to the other eye
 - Max ray distance
-
-
+- Optimise ground intersection, should be able to make it faster since ground normal is always (0,1,0)
+- Try using cuda faster math functions https://docs.nvidia.com/cuda/cuda-c-programming-guide/#intrinsic-functions
+- Cuda optimisation webinars https://developer.nvidia.com/developer-webinars (https://www.youtube.com/watch?v=vt7Hvj4oviQ&feature=player_detailpage)
 
 
 

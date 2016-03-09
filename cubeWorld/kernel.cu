@@ -51,15 +51,18 @@ __constant__ uint grid[5][5][5] = {
 { { 1, 0, 0, 0, 0 }, { 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 1 }, { 1, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 } },
 };
 
-// Returns distance to intersection or 0 if no intersection
-__device__ float box_intersect(const Ray &r, const float3 min, const float3 max) {
+__device__ bool box_intersect(const Ray &r, float &t, const float3 min, const float3 max) {
 
-	if (fabs(r.dir.x) < EPSILON) return 0;
-	if (fabs(r.dir.y) < EPSILON) return 0;
-	if (fabs(r.dir.z) < EPSILON) return 0;
+	// This division should be precomputed if it ends up getting called a lot for the same ray dir.
+	// Need to make sure r.dir isn't 0 before doing the divide.
+	float3 rayDirSafe;
+	if (fabs(r.dir.x) < EPSILON) rayDirSafe.x = EPSILON; else rayDirSafe.x = r.dir.x;
+	if (fabs(r.dir.y) < EPSILON) rayDirSafe.y = EPSILON; else rayDirSafe.y = r.dir.y;
+	if (fabs(r.dir.z) < EPSILON) rayDirSafe.z = EPSILON; else rayDirSafe.z = r.dir.z;
+	float3 rayDirInv = { 1.0f / rayDirSafe.x, 1.0f / rayDirSafe.y, 1.0f / rayDirSafe.z };
 
-	float3 tmin = (min - r.orig) / r.dir;
-	float3 tmax = (max - r.orig) / r.dir;
+	float3 tmin = (min - r.orig) * rayDirInv;
+	float3 tmax = (max - r.orig) * rayDirInv;
 
 	float3 real_min = minf3(tmin, tmax);
 	float3 real_max = maxf3(tmin, tmax);
@@ -67,9 +70,12 @@ __device__ float box_intersect(const Ray &r, const float3 min, const float3 max)
 	float minmax = minf1(minf1(real_max.x, real_max.y), real_max.z);
 	float maxmin = maxf1(maxf1(real_min.x, real_min.y), real_min.z);
 
-	if (minmax >= maxmin) { return maxmin > EPSILON ? maxmin : 0; }
-	else return 0;
-
+	if (minmax >= maxmin) {
+		if (maxmin < EPSILON) return false;
+		t = maxmin;
+		return true;
+	}
+	else return false;
 }
 
 __device__ bool ground_intersect(const Ray &ray, float &t, float3 &color, float3 &normal) {
@@ -92,9 +98,8 @@ __device__ inline bool grid_intersect(const Ray &ray, float &t, float3 &color, f
 	// Check if ray starts inside bbox.
 	if (! ((ray.orig.x > gridMin.x && ray.orig.x < gridMax.x) && (ray.orig.y > gridMin.y && ray.orig.y < gridMax.y) && (ray.orig.z > gridMin.z && ray.orig.z < gridMax.z))) {
 		// If not inside find if and where ray hits grid bbox
-		bboxIsecDist = box_intersect(ray, gridMin, gridMax);
 		// If misses grid entirely intersect ground plane
-		if (bboxIsecDist == 0) {
+		if (!box_intersect(ray, bboxIsecDist, gridMin, gridMax)) {
 			return ground_intersect(ray, t, color, normal);
 		}
 	}
@@ -191,13 +196,11 @@ __device__ inline bool grid_intersect(const Ray &ray, float &t, float3 &color, f
 	// If the normal is still 0 here, it means the ray hit the outside of the grid so need
 	// to do something else to get the normal.
 	if (normal.x == 0.0f && normal.y == 0.0f && normal.z == 0.0f) {
-		const float epsilon = 0.001f;
-
-		if (fabs(gridMin.x - gridIsecPoint.x) < epsilon) normal = { -1.0f, 0.0f, 0.0f };
-		else if (fabs(gridMax.x - gridIsecPoint.x) < epsilon) normal = { 1.0f, 0.0f, 0.0f };
-		else if (fabs(gridMin.y - gridIsecPoint.y) < epsilon) normal = { 0.0f, -1.0f, 0.0f };
-		else if (fabs(gridMax.y - gridIsecPoint.y) < epsilon) normal = { 0.0f, 1.0f, 0.0f };
-		else if (fabs(gridMin.z - gridIsecPoint.z) < epsilon) normal = { 0.0f, 0.0f, -1.0f };
+		if (fabs(gridMin.x - gridIsecPoint.x) < EPSILON) normal = { -1.0f, 0.0f, 0.0f };
+		else if (fabs(gridMax.x - gridIsecPoint.x) < EPSILON) normal = { 1.0f, 0.0f, 0.0f };
+		else if (fabs(gridMin.y - gridIsecPoint.y) < EPSILON) normal = { 0.0f, -1.0f, 0.0f };
+		else if (fabs(gridMax.y - gridIsecPoint.y) < EPSILON) normal = { 0.0f, 1.0f, 0.0f };
+		else if (fabs(gridMin.z - gridIsecPoint.z) < EPSILON) normal = { 0.0f, 0.0f, -1.0f };
 		else normal = { 0.0f, 0.0f, 1.0f };
 	}
 
