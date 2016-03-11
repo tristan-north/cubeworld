@@ -1,5 +1,6 @@
 #pragma once
 
+#define GLM_FORCE_CUDA  // This needs to go before any glm includes
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 

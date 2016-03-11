@@ -9,6 +9,7 @@
 #include <curand.h>
 #include <curand_kernel.h>
 #include <cuda_gl_interop.h>
+#include <glm/glm.hpp>
 
 
 #include "common.h"
@@ -64,6 +65,37 @@ __constant__ uint grid[10][10][10] = {
 	{ { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
 };
 
+
+__device__ bool sphere_intersect(const Ray &r, float &t, const glm::vec3 pos, const float radius) {
+	// Ray/sphere intersection
+	// Quadratic formula required to solve ax^2 + bx + c = 0 
+	// Solution x = (-b +- sqrt(b*b - 4ac)) / 2a
+	// Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0 
+
+	glm::vec3 op = pos - glm::vec3(r.orig.x, r.orig.y, r.orig.z);
+	float b = dot(op, glm::vec3(r.dir.x, r.dir.y, r.dir.z));
+	float disc = b*b - dot(op, op) + radius*radius; // discriminant
+	if (disc<0) return false; else disc = sqrtf(disc);
+
+	t = b - disc;
+	if (t > EPSILON) return true;
+	t = b + disc;
+	if (t > EPSILON) return true;
+	return false;
+}
+
+__device__ glm::vec3 point_on_sphere(const glm::vec3 pos, float radius, float rand1, float rand2) {
+	// From first example in http://mathworld.wolfram.com/SpherePointPicking.html
+	float theta = 2 * M_PI * rand1;
+	float phi = acos(2 * rand2 - 1);
+
+	glm::vec3 p;
+	p.x = cos(theta) * sin(phi);
+	p.y = sin(theta) * sin(phi);
+	p.z = cos(phi);
+	
+	return p * radius + pos;
+}
 
 __device__ bool box_intersect(const Ray &r, float &t, const float3 min, const float3 max) {
 
@@ -226,7 +258,7 @@ __device__ inline bool grid_intersect(const Ray &inRay, float &t, float3 &color,
 
 	t += bboxIsecDist;
 	if (t > LARGE_VAL) t = LARGE_VAL;
-	color = { 0.9, 0.3, 0.001 };
+	color = { 0.9, 0.3, 0.01 };
 	return hit;
 }
 
@@ -240,42 +272,64 @@ __device__ float3 radiance(const Ray &camRay, curandState &randstate, const Ligh
 	float3 accucolor = make_float3(0.0f, 0.0f, 0.0f);
 
 	Ray r = camRay;
-	float3 normal, color, shadNormal, shadColor;
+	float3 normal, surfaceColor, shadNormal, shadColor;
 	float t, ndotl;
 
 	for (int bounces = 0; bounces < RAYDEPTH; bounces++){  // iteration (instead of recursion in CPU code)
-		
+		t = LARGE_VAL;
+
 		// intersect ray with scene
-		bool hit = grid_intersect(r, t, color, normal);
+		bool hit = grid_intersect(r, t, surfaceColor, normal);
 		if (!hit) {
-			hit = ground_intersect(r, t, color, normal);
-			if (!hit) {
-				accucolor += make_float3(SKY_COLOR) * mask;
-				break;
+			hit = ground_intersect(r, t, surfaceColor, normal);
+		}
+
+		// if camera ray, test against lights
+		if (bounces == 0) {
+			float lightT;
+			if (sphere_intersect(r, lightT, light.pos, light.size)) {  // If the primary ray hits the light
+				if (lightT < t || !hit) {  // If the distance to the light is less than to the scene hit, or if the scene wasn't hit
+					accucolor = make_float3(light.color.x, light.color.y, light.color.z);
+					break;
+				}
 			}
+		}
+
+		// if ray misses everything add sky color and break
+		if (!hit) {
+			accucolor += make_float3(SKY_COLOR) * mask;
+			break;
 		}
 
 		// Shoot shadow ray
 		r.orig += r.dir*t;  // Move ray origin to hit point
 		r.orig += normal * 0.001;  // Shadow bias
-		float3 pointOnLight = { (curand_uniform(&randstate) - 0.5) * light.size + light.pos.x, light.pos.y, (curand_uniform(&randstate) - 0.5) * light.size + light.pos.z };
+		glm::vec3 tmp = point_on_sphere(light.pos, light.size, curand_uniform(&randstate), curand_uniform(&randstate));
+		float3 pointOnLight = { tmp.x, tmp.y, tmp.z };
 		float3 vecToLight = pointOnLight - r.orig;
 		r.dir = normalize(vecToLight);
-		hit = grid_intersect(r, t, shadColor, shadNormal);
+		ndotl = max(dot(normal, r.dir), 0.0f);
+
+		if (ndotl > 0)  // Don't bother tracing a shadow ray if the light is hitting the backface
+			hit = grid_intersect(r, t, shadColor, shadNormal);
+		else {
+			hit = true; 
+			t = 0.0f;
+		}
 
 		// Test if the distance to the light is closer than the distance to the hit point, in which case it's not shadowed
 		if (hit) {
 			if (t > length(vecToLight)) hit = false;
 		}
+		if (pointOnLight.y < 0.0f) hit = true; // If light sample is under the ground plane, consider it shadowed
 
 		// If not shadowed
 		if (!hit) {
-			ndotl = max(dot(normal, r.dir), 0.0f);
 			float3 lightColor = make_float3(light.color.x, light.color.y, light.color.z);
 			lightColor *= 1 / (length(vecToLight)*length(vecToLight));  // Distance falloff
-			accucolor += (color * ndotl * lightColor) * mask;
+			accucolor += (surfaceColor * ndotl * lightColor) * mask;
 		}
-		mask *= color;
+		mask *= surfaceColor;
 
 		// Set up indirect ray dir for next ray depth loop
 		// Create new cosine weighted ray

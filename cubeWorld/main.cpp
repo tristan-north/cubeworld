@@ -186,6 +186,10 @@ int main(int argc, char** argv){
 					g_cam.offsetOrientation(0, 0.3f * e.motion.xrel);
 					g_cam.offsetOrientation(0.3f * e.motion.yrel, 0);
 				}
+				else if (e.motion.state & SDL_BUTTON(SDL_BUTTON_RIGHT)) {
+					g_light.pos += glm::vec3(e.motion.xrel * KEYBOARD_MOVESPEED * 0.4f, 0.0f, 0.0f);
+					g_light.pos += glm::vec3(0.0f, -e.motion.yrel * KEYBOARD_MOVESPEED * 0.4f, 0.0f);
+				}
 			}
 		}
 
@@ -205,14 +209,14 @@ int main(int argc, char** argv){
 		if (keyState[SDL_SCANCODE_Q])
 			g_cam.offsetPosition(-g_cam.up() * KEYBOARD_MOVESPEED * frameTime);
 
-		if (keyState[SDL_SCANCODE_KP_4])
-			g_light.pos += glm::vec3(-1.0f, 0.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
-		if (keyState[SDL_SCANCODE_KP_6])
-			g_light.pos += glm::vec3(1.0f, 0.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
-		if (keyState[SDL_SCANCODE_KP_8])
-			g_light.pos += glm::vec3(0.0f, 1.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
-		if (keyState[SDL_SCANCODE_KP_5])
-			g_light.pos += glm::vec3(0.0f, -1.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
+		//if (keyState[SDL_SCANCODE_KP_4])
+		//	g_light.pos += glm::vec3(-1.0f, 0.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
+		//if (keyState[SDL_SCANCODE_KP_6])
+		//	g_light.pos += glm::vec3(1.0f, 0.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
+		//if (keyState[SDL_SCANCODE_KP_8])
+		//	g_light.pos += glm::vec3(0.0f, 1.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
+		//if (keyState[SDL_SCANCODE_KP_5])
+		//	g_light.pos += glm::vec3(0.0f, -1.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
 
 		renderStartTime = timer::getStartTime();
 		renderFrame();
@@ -238,7 +242,8 @@ int main(int argc, char** argv){
 
 /* TODO
 
-- Make light a sphere and visible to cam
+- Check lighting against arnold render when there's no sphere light and do some more other tests
+- Convert to glm instead of float3
 
 - Render text info http://www.sdltutorials.com/sdl-ttf
 - Make sure am sending rays through the center of each pixel
