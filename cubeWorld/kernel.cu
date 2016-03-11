@@ -42,14 +42,28 @@ inline __device__ float maxf1(float a, float b){ return a > b ? a : b; }
 __constant__ float aspectRatio = float(WIDTH) / HEIGHT;
 __constant__ float3 gridMin = { -50.0f, 0.0f, -50.0f };
 __constant__ float3 gridMax = { 50.0f, 100.0f, 50.0f };
-__constant__ uint gridRes = 5;
-__constant__ uint grid[5][5][5] = { 
-{ { 1, 1, 1, 1, 1 }, { 0, 0, 0, 0, 0 }, { 1, 0, 1, 0, 0 }, { 0, 1, 0, 0, 0 }, { 0, 0, 0, 0, 0 } },
-{ { 1, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0 }, { 0, 0, 1, 0, 0 }, { 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 } },
-{ { 1, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0 }, { 0, 0, 1, 0, 0 }, { 0, 1, 0, 0, 0 } },
-{ { 1, 0, 0, 0, 0 }, { 0, 1, 0, 0, 0 }, { 0, 1, 0, 0, 0 }, { 0, 0, 0, 0, 0 }, { 0, 1, 1, 0, 0 } },
-{ { 1, 0, 0, 0, 0 }, { 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 1 }, { 1, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 } },
+//__constant__ uint gridRes = 5;
+//__constant__ uint grid[5][5][5] = { 
+//{ { 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }, { 1, 0, 1, 0, 0 }, { 0, 1, 0, 0, 0 }, { 0, 0, 0, 0, 0 } },
+//{ { 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0 }, { 0, 0, 1, 0, 0 }, { 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 } },
+//{ { 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 }, { 0, 0, 1, 0, 0 }, { 0, 0, 1, 0, 0 }, { 0, 1, 0, 0, 0 } },
+//{ { 0, 0, 0, 0, 0 }, { 0, 1, 0, 0, 0 }, { 0, 1, 0, 0, 0 }, { 0, 0, 0, 0, 0 }, { 0, 1, 1, 0, 0 } },
+//{ { 0, 0, 0, 0, 0 }, { 0, 0, 0, 1, 0 }, { 0, 0, 0, 0, 1 }, { 1, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0 } },
+//};
+__constant__ uint gridRes = 10;
+__constant__ uint grid[10][10][10] = {
+	{ { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
+	{ { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
+	{ { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
+	{ { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
+	{ { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 1, 1, 0, 0, 0, 0 }, { 1, 0, 0, 0, 1, 1, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
+	{ { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 1, 1, 0, 0, 0, 0 }, { 1, 0, 0, 0, 1, 1, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
+	{ { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
+	{ { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
+	{ { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
+	{ { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 } },
 };
+
 
 __device__ bool box_intersect(const Ray &r, float &t, const float3 min, const float3 max) {
 
@@ -72,6 +86,7 @@ __device__ bool box_intersect(const Ray &r, float &t, const float3 min, const fl
 
 	if (minmax >= maxmin) {
 		if (maxmin < EPSILON) return false;
+		if (t > LARGE_VAL) t = LARGE_VAL;
 		t = maxmin;
 		return true;
 	}
@@ -83,7 +98,8 @@ __device__ bool ground_intersect(const Ray &ray, float &t, float3 &color, float3
 	if (denom < EPSILON) {
 		float3 p0l0 = make_float3(0.0f, 0.0f, 0.0f) - ray.orig;
 		t = dot(p0l0, make_float3(0.0f, 1.0f, 0.0f)) / denom;
-		color = { 1.0f, 1.0f, 1.0f };
+		if (t > LARGE_VAL) t = LARGE_VAL;
+		color = { 0.9f, 0.9f, 0.9f };
 		normal = { 0.0f, 1.0f, 0.0f };
 		return (t >= 0);
 	}
@@ -91,16 +107,21 @@ __device__ bool ground_intersect(const Ray &ray, float &t, float3 &color, float3
 }
 
 
-__device__ inline bool grid_intersect(const Ray &ray, float &t, float3 &color, float3 &normal) {
+__device__ inline bool grid_intersect(const Ray &inRay, float &t, float3 &color, float3 &normal) {
+	Ray ray = inRay;
+	if (fabs(inRay.dir.x) < EPSILON) ray.dir.x = EPSILON; else ray.dir.x = inRay.dir.x;
+	if (fabs(inRay.dir.y) < EPSILON) ray.dir.y = EPSILON; else ray.dir.y = inRay.dir.y;
+	if (fabs(inRay.dir.z) < EPSILON) ray.dir.z = EPSILON; else ray.dir.z = inRay.dir.z;
+	//assert(fabs(ray.dir.x) > EPSILON/2); assert(fabs(ray.dir.y) > EPSILON/2); assert(fabs(ray.dir.z) > EPSILON/2);
+
 	const float3 cellSize = { (gridMax.x - gridMin.x) / gridRes, (gridMax.y - gridMin.y) / gridRes, (gridMax.z - gridMin.z) / gridRes };
 
 	float bboxIsecDist = 0;
 	// Check if ray starts inside bbox.
 	if (! ((ray.orig.x > gridMin.x && ray.orig.x < gridMax.x) && (ray.orig.y > gridMin.y && ray.orig.y < gridMax.y) && (ray.orig.z > gridMin.z && ray.orig.z < gridMax.z))) {
 		// If not inside find if and where ray hits grid bbox
-		// If misses grid entirely intersect ground plane
 		if (!box_intersect(ray, bboxIsecDist, gridMin, gridMax)) {
-			return ground_intersect(ray, t, color, normal);
+			return false;  // If doesn't hit the bbox at all just return
 		}
 	}
 	const float3 gridIsecPoint = ray.orig + ray.dir*bboxIsecDist;
@@ -143,7 +164,6 @@ __device__ inline bool grid_intersect(const Ray &ray, float &t, float3 &color, f
 	// Traverse the grid.
 	t = 0;
 	bool hit = false;
-	color = { 0.0f, 0.0f, 0.0f };
 	const int maxCellIndex = (int)(gridRes - 1);
 	normal = { 0.0f, 0.0f, 0.0f };
 
@@ -191,7 +211,7 @@ __device__ inline bool grid_intersect(const Ray &ray, float &t, float3 &color, f
 		}
 	}
 
-	if (!hit) return ground_intersect(ray, t, color, normal);
+	if (!hit) return false;
 
 	// If the normal is still 0 here, it means the ray hit the outside of the grid so need
 	// to do something else to get the normal.
@@ -205,51 +225,59 @@ __device__ inline bool grid_intersect(const Ray &ray, float &t, float3 &color, f
 	}
 
 	t += bboxIsecDist;
-	color = { 0.9, 0.9, 0.9 };
+	if (t > LARGE_VAL) t = LARGE_VAL;
+	color = { 0.9, 0.3, 0.001 };
 	return hit;
 }
 
 
 // radiance function
 // compute path bounces in scene and accumulate returned color from each path sgment
-__device__ float3 radiance(const Ray &camRay, curandState &randstate){ // returns ray color
-
+__device__ float3 radiance(const Ray &camRay, curandState &randstate, const Light &light){ // returns ray color
 	// colour mask
 	float3 mask = make_float3(1.0f, 1.0f, 1.0f);
 	// accumulated colour
 	float3 accucolor = make_float3(0.0f, 0.0f, 0.0f);
 
 	Ray r = camRay;
+	float3 normal, color, shadNormal, shadColor;
+	float t, ndotl;
 
-	for (int bounces = 0; bounces < RAYDEPTH; bounces++){  // iteration up to 4 bounces (instead of recursion in CPU code)
-
-		// reset scene intersection function parameters
-		float t = 100000; // distance to intersection 
-		//float3 albedo;  // primitive colour
-		//float3 emission; // primitive emission colour
-		//float3 x; // intersection point
-		//float3 n; // normal
-		//float3 nl; // oriented normal
-		//float3 d; // ray direction of next path segment
-
+	for (int bounces = 0; bounces < RAYDEPTH; bounces++){  // iteration (instead of recursion in CPU code)
+		
 		// intersect ray with scene
-		// intersect_scene keeps track of closest intersected primitive and distance to closest intersection point
-		float3 color, normal;
-		if (!grid_intersect(r, t, color, normal)) {
-			return make_float3(1.0f, 1.0f, 1.0f) * mask; // if miss, return
+		bool hit = grid_intersect(r, t, color, normal);
+		if (!hit) {
+			hit = ground_intersect(r, t, color, normal);
+			if (!hit) {
+				accucolor += make_float3(SKY_COLOR) * mask;
+				break;
+			}
 		}
 
-		/*
-		Box &box = boxes[box_id];
-		x = r.orig + r.dir*t;  // intersection point on object
-		n = normalize(box.normalAt(x)); // normal
-		nl = dot(n, r.dir) < 0 ? n : n * -1;  // correctly oriented normal
-		albedo = box.col;  // box colour
-		emission = box.emi; // box emission
-		accucolor += (mask * emission);
-		*/
+		// Shoot shadow ray
+		r.orig += r.dir*t;  // Move ray origin to hit point
+		r.orig += normal * 0.001;  // Shadow bias
+		float3 pointOnLight = { (curand_uniform(&randstate) - 0.5) * light.size + light.pos.x, light.pos.y, (curand_uniform(&randstate) - 0.5) * light.size + light.pos.z };
+		float3 vecToLight = pointOnLight - r.orig;
+		r.dir = normalize(vecToLight);
+		hit = grid_intersect(r, t, shadColor, shadNormal);
 
-		// Diffuse shading
+		// Test if the distance to the light is closer than the distance to the hit point, in which case it's not shadowed
+		if (hit) {
+			if (t > length(vecToLight)) hit = false;
+		}
+
+		// If not shadowed
+		if (!hit) {
+			ndotl = max(dot(normal, r.dir), 0.0f);
+			float3 lightColor = make_float3(light.color.x, light.color.y, light.color.z);
+			lightColor *= 1 / (length(vecToLight)*length(vecToLight));  // Distance falloff
+			accucolor += (color * ndotl * lightColor) * mask;
+		}
+		mask *= color;
+
+		// Set up indirect ray dir for next ray depth loop
 		// Create new cosine weighted ray
 		// create 2 random numbers
 		float r1 = 2 * M_PI * curand_uniform(&randstate);
@@ -261,22 +289,17 @@ __device__ float3 radiance(const Ray &camRay, curandState &randstate){ // return
 		float3 u = normalize(cross((fabs(w.x) > .1f ? make_float3(0, 1, 0) : make_float3(1, 0, 0)), w));
 		float3 v = cross(w, u);
 		
-		r.orig = r.orig + r.dir*t;
-		r.orig += normal * 0.03;  // offset origin next path segment to prevent self intersection
-
 		// compute cosine weighted random ray direction on hemisphere 
 		r.dir = normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrtf(1 - r2));
-
-		mask *= color;
 	}
 
 	// add radiance up to a certain ray depth
 	// return accumulated ray colour after all bounces are computed
-	return  make_float3(0.0f, 0.0f, 0.0f);
+	return  accucolor;
 }
 
 
-__global__ void render_kernel(float3 *output, uint hashedpassnumber, float3 camOrig, float3 camDir, float3 camUp){
+__global__ void render_kernel(float3 *output, uint hashedpassnumber, float3 camOrig, float3 camDir, float3 camUp, Light light){
 
 	// assign a CUDA thread to every pixel by using the threadIndex
 	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
@@ -302,7 +325,7 @@ __global__ void render_kernel(float3 *output, uint hashedpassnumber, float3 camO
 		d += (camUp* ((y + rand2) / HEIGHT - 0.5f));  // Move our ray origin along up vector an amount depending on y value of pixel
 		d = normalize(d - camOrig);  // Get vector between new point and cam orig.
 
-		pixelcol += radiance(Ray(camOrig, d), randState)*(1. / SPP);
+		pixelcol += radiance(Ray(camOrig, d), randState, light)*(1. / SPP);
 	}
 
 	Colour fcolour;
@@ -325,7 +348,7 @@ void cudaCleanup() {
 	cudaFree(g_rgbBuffer);
 }
 
-void launchKernel(GLuint vbo, uint rand, Camera* cam) {
+void launchKernel(GLuint vbo, uint rand, Camera* cam, Light* light) {
 	// map vertex buffer object for access by CUDA 
 	cudaGLMapBufferObject((void**)&g_rgbBuffer, vbo);
 
@@ -342,7 +365,8 @@ void launchKernel(GLuint vbo, uint rand, Camera* cam) {
 	render_kernel << < gridSize, blockSize >> >(g_rgbBuffer, rand,
 												make_float3(cam->position().x, cam->position().y, cam->position().z),
 												make_float3(cam->forward().x, cam->forward().y, cam->forward().z),
-												make_float3(cam->up().x, cam->up().y, cam->up().z));
+												make_float3(cam->up().x, cam->up().y, cam->up().z),
+												*light);
 
 	cudaEventRecord(stop, 0);
 	cudaEventSynchronize(stop);

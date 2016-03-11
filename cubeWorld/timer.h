@@ -6,10 +6,10 @@ typedef LARGE_INTEGER timeVal;
 
 namespace timer {
 
-	timeVal frequency;
+	timeVal frequency = { 0 };
 
 	timeVal getStartTime() {
-		QueryPerformanceFrequency(&frequency);
+		if(!frequency.QuadPart) QueryPerformanceFrequency(&frequency);
 
 		timeVal startTime;
 		QueryPerformanceCounter(&startTime);
@@ -17,7 +17,7 @@ namespace timer {
 		return startTime;
 	}
 
-	float getElapsedInMs(timeVal startTime) {
+	float getElapsedInMs(const timeVal startTime) {
 		timeVal endTime, elapsedMicroseconds;
 		QueryPerformanceCounter(&endTime);
 

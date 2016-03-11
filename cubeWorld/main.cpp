@@ -28,9 +28,11 @@
 #include "kernel.cuh"
 #include "common.h"
 #include "camera.h"
+#include "timer.h"
 
 uint g_passNum = 0;
 Camera g_cam;
+Light g_light;
 
 SDL_Window* g_window = NULL;
 SDL_GLContext g_context;
@@ -57,7 +59,7 @@ void renderFrame()
 	//clear all pixels:
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	launchKernel(g_vbo, WangHash(g_passNum), &g_cam);
+	launchKernel(g_vbo, WangHash(g_passNum), &g_cam, &g_light);
 
 	//glFlush();
 	glBindBuffer(GL_ARRAY_BUFFER, g_vbo);
@@ -128,8 +130,14 @@ bool init() {
 	fprintf(stderr, "VBO created  \n");
 
 	// Set camera start position
-	g_cam.setPosition(glm::vec3(0, 50, 200));
+	g_cam.setPosition(glm::vec3(0, 50, 220));
 	g_cam.setViewportAspectRatio(float(WIDTH) / HEIGHT);
+	
+	g_light.dir = { 0.0f, -1.0f, 0.0f };
+	g_light.pos = { 0.0f, 60.0f, 0.0f };
+	g_light.color = { 1000.0f, 1000.0f, 1000.0f };
+	g_light.size = 10;
+
 	return true;
 }
 
@@ -142,6 +150,8 @@ int main(int argc, char** argv){
 	bool quit = false;
 	SDL_Event e;
 	int mouseCenter[2] = { 0, 0 };
+	timeVal renderStartTime;
+	renderStartTime = timer::getStartTime();
 
 	SDL_StartTextInput();
 	while (!quit)
@@ -180,20 +190,31 @@ int main(int argc, char** argv){
 		}
 
 		// Handle keyboard movement
+		float frameTime = timer::getElapsedInMs(renderStartTime);
 		const Uint8* keyState = SDL_GetKeyboardState(NULL);
 		if (keyState[SDL_SCANCODE_A])
-			g_cam.offsetPosition(-g_cam.right() * KEYBOARD_MOVESPEED);
+			g_cam.offsetPosition(-g_cam.right() * KEYBOARD_MOVESPEED * frameTime);
 		if (keyState[SDL_SCANCODE_D])
-			g_cam.offsetPosition(g_cam.right() * KEYBOARD_MOVESPEED);
+			g_cam.offsetPosition(g_cam.right() * KEYBOARD_MOVESPEED * frameTime);
 		if (keyState[SDL_SCANCODE_W])
-			g_cam.offsetPosition(g_cam.forward() * KEYBOARD_MOVESPEED);
+			g_cam.offsetPosition(g_cam.forward() * KEYBOARD_MOVESPEED * frameTime);
 		if (keyState[SDL_SCANCODE_S])
-			g_cam.offsetPosition(-g_cam.forward() * KEYBOARD_MOVESPEED);
+			g_cam.offsetPosition(-g_cam.forward() * KEYBOARD_MOVESPEED * frameTime);
 		if (keyState[SDL_SCANCODE_E])
-			g_cam.offsetPosition(g_cam.up() * KEYBOARD_MOVESPEED);
+			g_cam.offsetPosition(g_cam.up() * KEYBOARD_MOVESPEED * frameTime);
 		if (keyState[SDL_SCANCODE_Q])
-			g_cam.offsetPosition(-g_cam.up() * KEYBOARD_MOVESPEED);
+			g_cam.offsetPosition(-g_cam.up() * KEYBOARD_MOVESPEED * frameTime);
 
+		if (keyState[SDL_SCANCODE_KP_4])
+			g_light.pos += glm::vec3(-1.0f, 0.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
+		if (keyState[SDL_SCANCODE_KP_6])
+			g_light.pos += glm::vec3(1.0f, 0.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
+		if (keyState[SDL_SCANCODE_KP_8])
+			g_light.pos += glm::vec3(0.0f, 1.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
+		if (keyState[SDL_SCANCODE_KP_5])
+			g_light.pos += glm::vec3(0.0f, -1.0f, 0.0f) * KEYBOARD_MOVESPEED * 0.2f * frameTime;
+
+		renderStartTime = timer::getStartTime();
 		renderFrame();
 
 		SDL_GL_SwapWindow(g_window);
@@ -217,7 +238,8 @@ int main(int argc, char** argv){
 
 /* TODO
 
-- Implement direct light sampling
+- Make light a sphere and visible to cam
+
 - Render text info http://www.sdltutorials.com/sdl-ttf
 - Make sure am sending rays through the center of each pixel
 - Use FCAT to measure frame timings http://www.geforce.co.uk/hardware/technology/fcat/technology
@@ -233,7 +255,7 @@ OPTIMISATIONS
 - Optimise ground intersection, should be able to make it faster since ground normal is always (0,1,0)
 - Try using cuda faster math functions https://docs.nvidia.com/cuda/cuda-c-programming-guide/#intrinsic-functions
 - Cuda optimisation webinars https://developer.nvidia.com/developer-webinars (https://www.youtube.com/watch?v=vt7Hvj4oviQ&feature=player_detailpage)
-
+- Clamp indirect sample intensity
 
 
 
