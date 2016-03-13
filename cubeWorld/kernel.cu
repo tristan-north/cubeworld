@@ -104,22 +104,6 @@ __device__ void create_orthonormal_coords(const float3 &w, float3 &u, float3 &v)
 		u = cross(make_float3(1.0f, 0.0f, 0.0f), w);
 	u = normalize(u);
 	v = cross(u, w);
-
-	/*
-	// This is from pbrt CoordinateSystem() https://github.com/mmp/pbrt-v2/blob/d5e415cfabaa1781f833b60b30c3209410b089d1/src/core/geometry.h
-	if (fabsf(w.x) > fabsf(w.y)) {
-		float invLen = 1.f / sqrtf(w.x*w.x + w.z*w.z);
-		u = make_float3(-w.z * invLen, 0.f, w.x * invLen);
-	}
-	else {
-		float invLen = 1.f / sqrtf(w.y*w.y + w.z*w.z);
-		u = make_float3(0.f, w.z * invLen, -w.y * invLen);
-	}
-	v = cross(w, u);
-	*/
-	// This was from raytracey, looks like it could be faster?
-	//u = normalize(cross((fabs(w.x) > .1f ? make_float3(0, 1, 0) : make_float3(1, 0, 0)), w));
-	//v = cross(w, u);
 }
 
 __device__ bool box_intersect(const Ray &r, float &t, const float3 min, const float3 max) {
@@ -351,25 +335,18 @@ __device__ float3 radiance(const Ray &camRay, curandState &randstate, const Ligh
 		// Shoot shadow ray from shading point to light
 		r.orig += r.dir*t;  // Move ray origin to hit point
 		r.orig += normal * 0.001;  // Shadow bias
-		//glm::vec3 tmp = point_on_sphere(light.pos, light.radius, curand_uniform(&randstate), curand_uniform(&randstate));
-		//float3 pointOnLight = { tmp.x, tmp.y, tmp.z };
 
-		// Create point on unit disk based on http://mathworld.wolfram.com/DiskPointPicking.html
+		// Create point on a hemisphere facing the shading point
 		float rand1 = curand_uniform(&randstate) * 0.99999f;  // This gets used in a sqrt and if it's 1 will lead to sqrt(0);
 		float rand1s = sqrtf(rand1);
 		float rand2 = curand_uniform(&randstate) * 2 * M_PI;
 
-		float diskX = sqrtf(rand1) * cosf(rand2);
-		float diskY = sqrtf(rand1) * sinf(rand2);
 		// Move point to world space
 		float3 u, v, w;
 		float3 vecToLightCenter = make_float3(light.pos.x, light.pos.y, light.pos.z) - r.orig;
 		w = normalize(vecToLightCenter);
 		create_orthonormal_coords(w, u, v);
-		float3 tmp = diskX * u + diskY * v - 0 * w;
-		tmp = normalize(tmp) * light.radius;
-		float3 pointOnLight = make_float3(light.pos.x, light.pos.y, light.pos.z) + tmp;
-		pointOnLight = make_float3(light.pos.x, light.pos.y, light.pos.z) + normalize(u*cos(rand2)*rand1s + v*sin(rand2)*rand1s - w*sqrtf(1 - rand1)) * light.radius;
+		float3 pointOnLight = make_float3(light.pos.x, light.pos.y, light.pos.z) + normalize(u*cos(rand2)*rand1s + v*sin(rand2)*rand1s - w*sqrtf(1 - rand1)) * light.radius;
 		 
 		float3 vecToLightSample = pointOnLight - r.orig;
 		r.dir = normalize(vecToLightSample);
@@ -420,7 +397,6 @@ __device__ float3 radiance(const Ray &camRay, curandState &randstate, const Ligh
 		
 		// compute cosine weighted random ray direction on hemisphere 
 		r.dir = normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrtf(1 - r2));
-
 	}
 
 	

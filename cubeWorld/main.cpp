@@ -242,7 +242,8 @@ int main(int argc, char** argv){
 
 /* TODO
 
-- Figure out why surface gets brighter than light source when close to surface.
+- Check sphere light sample distribution is even when looking from the shading point.
+- Figure out why rendering black when depth > 1
 - Create light samples based on the solid angle rather than point on a sphere like here http://graphics.pixar.com/library/PhysicallyBasedLighting/paper.pdf
 
 - Convert to glm instead of float3
