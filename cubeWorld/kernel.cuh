@@ -3,7 +3,7 @@
 typedef unsigned int uint;
 
 class Camera;
-class Light;
+struct Light;
 
 void cudaInit(GLuint vbo);
 void cudaCleanup();
