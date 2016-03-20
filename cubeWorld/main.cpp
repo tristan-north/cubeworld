@@ -135,8 +135,8 @@ bool init() {
 	
 	g_light.dir = { 0.0f, -1.0f, 0.0f };
 	g_light.pos = { 0.0f, 60.0f, 0.0f };
-	//g_light.color = { 1.0f, 1.0f, 1.0f };
-	g_light.color = { 0.1f, 0.1f, 0.1f };
+	g_light.color = { 60.0f, 60.0f, 60.0f };
+	//g_light.color = { 0.1f, 0.1f, 0.1f };
 	g_light.radius = 5.0f;
 
 	return true;
@@ -244,6 +244,7 @@ int main(int argc, char** argv){
 
 - Check sphere light sample distribution is even when looking from the shading point.
 - Figure out why rendering black when depth > 1
+- Check lighting matches arnold when light is close to a surface
 - Create light samples based on the solid angle rather than point on a sphere like here http://graphics.pixar.com/library/PhysicallyBasedLighting/paper.pdf
 
 - Convert to glm instead of float3
@@ -265,7 +266,6 @@ OPTIMISATIONS
 - Cuda optimisation webinars https://developer.nvidia.com/developer-webinars (https://www.youtube.com/watch?v=vt7Hvj4oviQ&feature=player_detailpage)
 - Clamp indirect sample intensity
 - Shoot more light shadow rays based on the solid angle of the light to the shading point
-
 
 
 */

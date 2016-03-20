@@ -435,30 +435,21 @@ __global__ void render_kernel(float3 *output, uint hashedpassnumber, float3 camO
 		pixelcol += radiance(Ray(camOrig, d), randState, light)*(1. / SPP);
 	}
 
-	///////////////////////////////////////////////////////////////////////////////////
-	//if (threadId != 0) return;
-	//pixelcol = make_float3(1.0f, 0.0f, 0.0f);
+	// Gamma correction
+	pixelcol.x = powf(pixelcol.x, 1 / 2.2);
+	pixelcol.y = powf(pixelcol.y, 1 / 2.2);
+	pixelcol.z = powf(pixelcol.z, 1 / 2.2);
 
-	//float rand1 = curand_uniform(&randState);
-	//float rand2 = curand_uniform(&randState);
-
-	//float pixCoordX = sqrtf(rand1) * cosf(rand2 * 2 * M_PI);
-	//float pixCoordY = sqrtf(rand1) * sinf(rand2 * 2 * M_PI);
-
-	//x = (pixCoordX + 1.0) / 2.0 * WIDTH * HEIGHT/WIDTH;
-	//y = (pixCoordY + 1.0) / 2.0 * HEIGHT;
-
-	//Colour fcolour;
-	//float3 colour = make_float3(clamp(pixelcol.x, 0.0f, 1.0f), clamp(pixelcol.y, 0.0f, 1.0f), clamp(pixelcol.z, 0.0f, 1.0f));
-	//fcolour.components = make_uchar4((unsigned char)(powf(colour.x, 1 / 2.2f) * 255), (unsigned char)(powf(colour.y, 1 / 2.2f) * 255), (unsigned char)(powf(colour.z, 1 / 2.2f) * 255), 1);
-	//int i = (HEIGHT - y - 1)*WIDTH + x; // pixel index
-	//output[i] = make_float3(x, y, fcolour.c);
-	///////////////////////////////////////////////////////////////////////////////////
+	// This tone mapping is the one unreal engine uses. It incudes gamma correction. Could try changing the coefficients to get different looks.
+	//pixelcol.x = pixelcol.x / (pixelcol.x + 0.187f) * 1.035f;
+	//pixelcol.y = pixelcol.y / (pixelcol.y + 0.187f) * 1.035f;
+	//pixelcol.z = pixelcol.z / (pixelcol.z + 0.187f) * 1.035f;
 	
+	// Convert to unsigned char for openGL.
 	Colour fcolour;
-	float3 colour = make_float3(clamp(pixelcol.x, 0.0f, 1.0f), clamp(pixelcol.y, 0.0f, 1.0f), clamp(pixelcol.z, 0.0f, 1.0f));
-	// convert from 96-bit to 24-bit colour + perform gamma correction
-	fcolour.components = make_uchar4((unsigned char)(powf(colour.x, 1 / 2.2f) * 255), (unsigned char)(powf(colour.y, 1 / 2.2f) * 255), (unsigned char)(powf(colour.z, 1 / 2.2f) * 255), 1);
+	fcolour.components = make_uchar4((unsigned char)clamp(pixelcol.x * 255.0f, 0.0f, 255.0f),
+									(unsigned char)clamp(pixelcol.y * 255.0f, 0.0f, 255.0f),
+									(unsigned char)clamp(pixelcol.z * 255.0f, 0.0f, 255.0f), 1);
 	// store pixel coordinates and pixelcolour in OpenGL readable outputbuffer
 	int i = (HEIGHT - y - 1)*WIDTH + x; // pixel index
 	output[i] = make_float3(x, y, fcolour.c);
