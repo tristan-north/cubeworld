@@ -9,7 +9,7 @@ namespace timer {
 	timeVal frequency = { 0 };
 
 	timeVal getStartTime() {
-		if(!frequency.QuadPart) QueryPerformanceFrequency(&frequency);
+		if (!frequency.QuadPart) QueryPerformanceFrequency(&frequency);
 
 		timeVal startTime;
 		QueryPerformanceCounter(&startTime);

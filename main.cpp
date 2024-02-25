@@ -1,18 +1,10 @@
 /*
-*  Basic CUDA based triangle mesh path tracer.
-*  For background info, see http://raytracey.blogspot.co.nz/2015/12/gpu-path-tracing-tutorial-2-interactive.html
-*  Based on CUDA ray tracing code from http://cg.alexandra.dk/?p=278
-*  Copyright (C) 2015  Sam Lapere
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
+A CUDA experiment
+
+References:
+https://scratchapixel.com/lessons/3d-basic-rendering/introduction-acceleration-structure/bounding-volume-hierarchy-BVH-part1.html
+https://github.com/straaljager/GPU-path-tracing-with-CUDA-tutorial-2
+
 */
 
 #include <SDL.h>
@@ -117,7 +109,7 @@ bool init() {
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glMatrixMode(GL_PROJECTION);
 	gluOrtho2D(0.0, WIDTH, 0.0, HEIGHT);
-	fprintf(stderr, "OpenGL initialized \n");
+	fprintf(stderr, "\n\nOpenGL initialized \n");
 
 	//create VBO (vertex buffer object)
 	glGenBuffers(1, &g_vbo);
@@ -127,12 +119,12 @@ bool init() {
 	glBufferData(GL_ARRAY_BUFFER, size, 0, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	fprintf(stderr, "VBO created  \n");
+	//fprintf(stderr, "VBO created  \n");
 
 	// Set camera start position
 	g_cam.setPosition(glm::vec3(0, 50, 220));
 	g_cam.setViewportAspectRatio(float(WIDTH) / HEIGHT);
-	
+
 	g_light.dir = { 0.0f, -1.0f, 0.0f };
 	g_light.pos = { 0.0f, 60.0f, 0.0f };
 	g_light.color = { 60.0f, 60.0f, 60.0f };
@@ -142,10 +134,11 @@ bool init() {
 	return true;
 }
 
-int main(int argc, char** argv){
+int main(int argc, char** argv) {
 
 	init();
 	cudaInit(g_vbo);
+
 
 	// Event loop
 	bool quit = false;
@@ -196,6 +189,9 @@ int main(int argc, char** argv){
 
 		// Handle keyboard movement
 		float frameTime = timer::getElapsedInMs(renderStartTime);
+		if(g_passNum % 5 == 0)
+			printf("\rframeTime: %.1fms  FPS: %.1f                        ", frameTime, 1000/frameTime);
+
 		const Uint8* keyState = SDL_GetKeyboardState(NULL);
 		if (keyState[SDL_SCANCODE_A])
 			g_cam.offsetPosition(-g_cam.right() * KEYBOARD_MOVESPEED * frameTime);
@@ -242,16 +238,9 @@ int main(int argc, char** argv){
 
 /* TODO
 
-- Check sphere light sample distribution is even when looking from the shading point.
-- Figure out why rendering black when depth > 1
 - Check lighting matches arnold when light is close to a surface
-- Create light samples based on the solid angle rather than point on a sphere like here http://graphics.pixar.com/library/PhysicallyBasedLighting/paper.pdf
-
 - Convert to glm instead of float3
-
 - Render text info http://www.sdltutorials.com/sdl-ttf
-- Make sure am sending rays through the center of each pixel
-- Use FCAT to measure frame timings http://www.geforce.co.uk/hardware/technology/fcat/technology
 
 OPTIMISATIONS
 - Render primary rays at full res and store normal and position in an array
@@ -259,7 +248,6 @@ OPTIMISATIONS
 - Shoot secondary rays spasely and filter nearby secondary rays with the same normal
 - Use secondary ray samples from previous frames
 
-- For stereo, for each primary ray, connect the hit point back to the other eye
 - Max ray distance
 - Optimise ground intersection, should be able to make it faster since ground normal is always (0,1,0)
 - Try using cuda faster math functions https://docs.nvidia.com/cuda/cuda-c-programming-guide/#intrinsic-functions

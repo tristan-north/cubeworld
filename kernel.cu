@@ -1,4 +1,4 @@
-#include "cutil_math.h"  // required for float3 vector math
+﻿#include "cutil_math.h"  // required for float3 vector math
 #include <Windows.h>  // This needs to be included before openGL stuff
 #include <cuda.h>
 #include <math_functions.h>
@@ -19,7 +19,7 @@
 #define M_PI 3.14159265359f
 
 // output buffer
-float3 *g_rgbBuffer;
+float3* g_rgbBuffer;
 
 struct Ray {
 	float3 orig;	// ray origin
@@ -35,12 +35,12 @@ union Colour  // 4 bytes = 4 chars = 1 float
 };
 
 // helper functions
-inline __device__ float3 minf3(float3 a, float3 b){ return make_float3(a.x < b.x ? a.x : b.x, a.y < b.y ? a.y : b.y, a.z < b.z ? a.z : b.z); }
-inline __device__ float3 maxf3(float3 a, float3 b){ return make_float3(a.x > b.x ? a.x : b.x, a.y > b.y ? a.y : b.y, a.z > b.z ? a.z : b.z); }
-inline __device__ float minf1(float a, float b){ return a < b ? a : b; }
-inline __device__ float maxf1(float a, float b){ return a > b ? a : b; }
+inline __device__ float3 minf3(float3 a, float3 b) { return make_float3(a.x < b.x ? a.x : b.x, a.y < b.y ? a.y : b.y, a.z < b.z ? a.z : b.z); }
+inline __device__ float3 maxf3(float3 a, float3 b) { return make_float3(a.x > b.x ? a.x : b.x, a.y > b.y ? a.y : b.y, a.z > b.z ? a.z : b.z); }
+inline __device__ float minf1(float a, float b) { return a < b ? a : b; }
+inline __device__ float maxf1(float a, float b) { return a > b ? a : b; }
 
-__constant__ float aspectRatio = float(WIDTH) / HEIGHT;
+__constant__ float g_aspectRatio = float(WIDTH) / HEIGHT;
 __constant__ float3 gridMin = { -50.0f, 0.0f, -50.0f };
 __constant__ float3 gridMax = { 50.0f, 100.0f, 50.0f };
 //__constant__ uint gridRes = 5;
@@ -66,7 +66,7 @@ __constant__ uint grid[10][10][10] = {
 };
 
 
-__device__ bool sphere_intersect(const Ray &r, float &t, const glm::vec3 pos, const float radius) {
+__device__ bool sphere_intersect(const Ray& r, float& t, const glm::vec3 pos, const float radius) {
 	// Ray/sphere intersection
 	// Quadratic formula required to solve ax^2 + bx + c = 0 
 	// Solution x = (-b +- sqrt(b*b - 4ac)) / 2a
@@ -74,8 +74,8 @@ __device__ bool sphere_intersect(const Ray &r, float &t, const glm::vec3 pos, co
 
 	glm::vec3 op = pos - glm::vec3(r.orig.x, r.orig.y, r.orig.z);
 	float b = dot(op, glm::vec3(r.dir.x, r.dir.y, r.dir.z));
-	float disc = b*b - dot(op, op) + radius*radius; // discriminant
-	if (disc<0) return false; else disc = sqrtf(disc);
+	float disc = b * b - dot(op, op) + radius * radius; // discriminant
+	if (disc < 0) return false; else disc = sqrtf(disc);
 
 	t = b - disc;
 	if (t > EPSILON) return true;
@@ -93,11 +93,11 @@ __device__ glm::vec3 point_on_sphere(const glm::vec3 pos, float radius, float ra
 	p.x = cos(theta) * sin(phi);
 	p.y = sin(theta) * sin(phi);
 	p.z = cos(phi);
-	
+
 	return p * radius + pos;
 }
 
-__device__ void create_orthonormal_coords(const float3 &w, float3 &u, float3 &v) {
+__device__ void create_orthonormal_coords(const float3& w, float3& u, float3& v) {
 	if (fabs(w.x) > .1f)
 		u = cross(make_float3(0.0f, 1.0f, 0.0f), w);
 	else
@@ -106,7 +106,7 @@ __device__ void create_orthonormal_coords(const float3 &w, float3 &u, float3 &v)
 	v = cross(u, w);
 }
 
-__device__ bool box_intersect(const Ray &r, float &t, const float3 min, const float3 max) {
+__device__ bool box_intersect(const Ray& r, float& t, const float3 min, const float3 max) {
 
 	// This division should be precomputed if it ends up getting called a lot for the same ray dir.
 	// Need to make sure r.dir isn't 0 before doing the divide.
@@ -134,7 +134,7 @@ __device__ bool box_intersect(const Ray &r, float &t, const float3 min, const fl
 	else return false;
 }
 
-__device__ bool ground_intersect(const Ray &ray, float &t, float3 &color, float3 &normal) {
+__device__ bool ground_intersect(const Ray& ray, float& t, float3& color, float3& normal) {
 	float denom = dot(make_float3(0.0f, 1.0f, 0.0f), ray.dir);
 	if (denom < EPSILON) {
 		float3 p0l0 = make_float3(0.0f, 0.0f, 0.0f) - ray.orig;
@@ -148,7 +148,7 @@ __device__ bool ground_intersect(const Ray &ray, float &t, float3 &color, float3
 }
 
 
-__device__ inline bool grid_intersect(const Ray &inRay, float &t, float3 &color, float3 &normal) {
+__device__ inline bool grid_intersect(const Ray& inRay, float& t, float3& color, float3& normal) {
 	Ray ray = inRay;
 	if (fabs(inRay.dir.x) < EPSILON) ray.dir.x = EPSILON; else ray.dir.x = inRay.dir.x;
 	if (fabs(inRay.dir.y) < EPSILON) ray.dir.y = EPSILON; else ray.dir.y = inRay.dir.y;
@@ -159,13 +159,13 @@ __device__ inline bool grid_intersect(const Ray &inRay, float &t, float3 &color,
 
 	float bboxIsecDist = 0;
 	// Check if ray starts inside bbox.
-	if (! ((ray.orig.x > gridMin.x && ray.orig.x < gridMax.x) && (ray.orig.y > gridMin.y && ray.orig.y < gridMax.y) && (ray.orig.z > gridMin.z && ray.orig.z < gridMax.z))) {
+	if (!((ray.orig.x > gridMin.x && ray.orig.x < gridMax.x) && (ray.orig.y > gridMin.y && ray.orig.y < gridMax.y) && (ray.orig.z > gridMin.z && ray.orig.z < gridMax.z))) {
 		// If not inside find if and where ray hits grid bbox
 		if (!box_intersect(ray, bboxIsecDist, gridMin, gridMax)) {
 			return false;  // If doesn't hit the bbox at all just return
 		}
 	}
-	const float3 gridIsecPoint = ray.orig + ray.dir*bboxIsecDist;
+	const float3 gridIsecPoint = ray.orig + ray.dir * bboxIsecDist;
 
 	// rayOGridspace is the ray origin position relative to the grid origin position. Ie rayOGrid is in "grid space".
 	const float3 rayOGridspace = { gridIsecPoint.x - gridMin.x, gridIsecPoint.y - gridMin.y, gridIsecPoint.z - gridMin.z };
@@ -274,7 +274,7 @@ __device__ inline bool grid_intersect(const Ray &inRay, float &t, float3 &color,
 
 // radiance function
 // compute path bounces in scene and accumulate returned color from each path sgment
-__device__ float3 radiance(const Ray &camRay, curandState &randstate, const Light &light){ // returns ray color
+__device__ float3 radiance(const Ray& camRay, curandState& randstate, const Light& light) { // returns ray color
 	// colour mask
 	float3 mask = make_float3(1.0f, 1.0f, 1.0f);
 	// accumulated colour
@@ -283,30 +283,8 @@ __device__ float3 radiance(const Ray &camRay, curandState &randstate, const Ligh
 	Ray r = camRay;
 	float3 normal, surfaceColor, shadNormal, shadColor;
 	float t, ndotl;
-	
-	//////////////////////////////
-	///////////////////////////////////////////////
-	//float rand1 = curand_uniform(&randstate);
-	//float rand2 = curand_uniform(&randstate);
-	//float3 lightCenterDir = make_float3(light.pos.x, light.pos.y, light.pos.z) - r.orig;
-	//float d2 = length(lightCenterDir); d2 = d2*d2;
-	//float cosThetaMax = sqrtf(1.0f - (light.radius*light.radius) / d2);
 
-	//float costheta = (1.f - rand1) + rand1 * cosThetaMax;
-	//float sintheta = sqrtf(1.f - costheta*costheta);
-	//float phi = rand2 * 2.f * M_PI;
-	//glm::vec3 diskPoint = { cosf(phi) * sintheta, sinf(phi) * sintheta, costheta };
-
-	//if (sphere_intersect(camRay, t, glm::vec3(rand1, 0, 0), 0.5f)){
-	//	accucolor = accucolor + make_float3(1.0f, 0.0f, 0.0f);
-	//}
-	//else {
-	//	accucolor = accucolor + make_float3(0.0f, 1.0f, 0.0f);
-	//}
-	//return accucolor;
-	/////////////////////////////////////////
-
-	for (int bounces = 0; bounces < RAYDEPTH; bounces++){  // iteration (instead of recursion in CPU code)
+	for (int bounces = 0; bounces < RAYDEPTH; bounces++) {  // iteration (instead of recursion in CPU code)
 		t = LARGE_VAL;
 
 		// intersect ray with scene
@@ -333,7 +311,7 @@ __device__ float3 radiance(const Ray &camRay, curandState &randstate, const Ligh
 		}
 
 		// Shoot shadow ray from shading point to light
-		r.orig += r.dir*t;  // Move ray origin to hit point
+		r.orig += r.dir * t;  // Move ray origin to hit point
 		r.orig += normal * 0.001;  // Shadow bias
 
 		// Create point on a hemisphere facing the shading point
@@ -346,8 +324,8 @@ __device__ float3 radiance(const Ray &camRay, curandState &randstate, const Ligh
 		float3 vecToLightCenter = make_float3(light.pos.x, light.pos.y, light.pos.z) - r.orig;
 		w = normalize(vecToLightCenter);
 		create_orthonormal_coords(w, u, v);
-		float3 pointOnLight = make_float3(light.pos.x, light.pos.y, light.pos.z) + normalize(u*cos(rand2)*rand1s + v*sin(rand2)*rand1s - w*sqrtf(1 - rand1)) * light.radius;
-		 
+		float3 pointOnLight = make_float3(light.pos.x, light.pos.y, light.pos.z) + normalize(u * cos(rand2) * rand1s + v * sin(rand2) * rand1s - w * sqrtf(1 - rand1)) * light.radius;
+
 		float3 vecToLightSample = pointOnLight - r.orig;
 		r.dir = normalize(vecToLightSample);
 		ndotl = max(dot(normal, r.dir), 0.0f);
@@ -355,7 +333,7 @@ __device__ float3 radiance(const Ray &camRay, curandState &randstate, const Ligh
 		if (ndotl > 0)  // Don't bother tracing a shadow ray if the light is hitting the backface
 			hit = grid_intersect(r, t, shadColor, shadNormal);
 		else {
-			hit = true; 
+			hit = true;
 			t = 0.0f;
 		}
 
@@ -369,15 +347,15 @@ __device__ float3 radiance(const Ray &camRay, curandState &randstate, const Ligh
 		if (!hit) {
 			float3 lightColor = make_float3(light.color.x, light.color.y, light.color.z);
 			//lightColor *= 1 / (length(vecToLight)*length(vecToLight));  // Distance falloff
-			
+
 			// Generate pdf. This was reference http://graphics.pixar.com/library/PhysicallyBasedLighting/paper.pdf
 			float3 lightCenterDir = make_float3(light.pos.x, light.pos.y, light.pos.z) - r.orig;
 			float d2 = length(lightCenterDir);
-			d2 = d2*d2;
-			if (d2 - light.radius*light.radius < EPSILON) // The shading point is inside the light
+			d2 = d2 * d2;
+			if (d2 - light.radius * light.radius < EPSILON) // The shading point is inside the light
 				break;
-	
-			float cosThetaMax = sqrtf(1.0f - (light.radius*light.radius) / d2);
+
+			float cosThetaMax = sqrtf(1.0f - (light.radius * light.radius) / d2);
 			// Technically pdf should be 1 / 2*M_PI * (1.0f - cosThetaMax) but the 1 / 2*M_PI would just get cancelled out later
 			float pdf = 1.0f - cosThetaMax;
 			accucolor += (surfaceColor * ndotl * lightColor * pdf) * mask;
@@ -394,23 +372,23 @@ __device__ float3 radiance(const Ray &camRay, curandState &randstate, const Ligh
 		// compute orthonormal coordinate frame uvw with hitpoint as origin 
 		w = normal;
 		create_orthonormal_coords(w, u, v);
-		
+
 		// compute cosine weighted random ray direction on hemisphere 
-		r.dir = normalize(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrtf(1 - r2));
+		r.dir = normalize(u * cos(r1) * r2s + v * sin(r1) * r2s + w * sqrtf(1 - r2));
 	}
 
-	
+
 	// add radiance up to a certain ray depth
 	// return accumulated ray colour after all bounces are computed
 	return accucolor;
 }
 
 
-__global__ void render_kernel(float3 *output, uint hashedpassnumber, float3 camOrig, float3 camDir, float3 camUp, Light light){
+__global__ void render_kernel(float3* output, uint hashedpassnumber, float3 camOrig, float3 camDir, float3 camUp, Light light) {
 
 	// assign a CUDA thread to every pixel by using the threadIndex
-	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
-	unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
+	unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
 	if (x >= WIDTH || y >= HEIGHT) return;
 
@@ -422,17 +400,18 @@ __global__ void render_kernel(float3 *output, uint hashedpassnumber, float3 camO
 	curand_init(hashedpassnumber + threadId, 0, 0, &randState);
 
 	float3 pixelcol = { 0.0f, 0.0f, 0.0f }; // final pixel color     
-	
-	for (int s = 0; s < SPP; s++){
+
+	for (int s = 0; s < SPP; s++) {
 		float3 d = camOrig + camDir * 1.5;  // Move point out from cam origin along cam dir. This distance controls the FOV.
 		float rand1 = curand_uniform(&randState) - 0.5f;
 		float rand2 = curand_uniform(&randState) - 0.5f;
 
-		d += (cross(camDir, camUp) * ((x + rand1) / WIDTH - 0.5f) * aspectRatio);  // Move our ray origin along right vector an amount depending on x value of pixel
-		d += (camUp* ((y + rand2) / HEIGHT - 0.5f));  // Move our ray origin along up vector an amount depending on y value of pixel
+		d += (cross(camDir, camUp) * ((x + rand1) / WIDTH - 0.5f) * g_aspectRatio);  // Move our ray origin along right vector an amount depending on x value of pixel
+
+		d += (camUp * ((y + rand2) / HEIGHT - 0.5f));  // Move our ray origin along up vector an amount depending on y value of pixel
 		d = normalize(d - camOrig);  // Get vector between new point and cam orig.
 
-		pixelcol += radiance(Ray(camOrig, d), randState, light)*(1. / SPP);
+		pixelcol += radiance(Ray(camOrig, d), randState, light) * (1. / SPP);
 	}
 
 	// Gamma correction
@@ -444,14 +423,14 @@ __global__ void render_kernel(float3 *output, uint hashedpassnumber, float3 camO
 	//pixelcol.x = pixelcol.x / (pixelcol.x + 0.187f) * 1.035f;
 	//pixelcol.y = pixelcol.y / (pixelcol.y + 0.187f) * 1.035f;
 	//pixelcol.z = pixelcol.z / (pixelcol.z + 0.187f) * 1.035f;
-	
+
 	// Convert to unsigned char for openGL.
 	Colour fcolour;
 	fcolour.components = make_uchar4((unsigned char)clamp(pixelcol.x * 255.0f, 0.0f, 255.0f),
-									(unsigned char)clamp(pixelcol.y * 255.0f, 0.0f, 255.0f),
-									(unsigned char)clamp(pixelcol.z * 255.0f, 0.0f, 255.0f), 1);
+		(unsigned char)clamp(pixelcol.y * 255.0f, 0.0f, 255.0f),
+		(unsigned char)clamp(pixelcol.z * 255.0f, 0.0f, 255.0f), 1);
 	// store pixel coordinates and pixelcolour in OpenGL readable outputbuffer
-	int i = (HEIGHT - y - 1)*WIDTH + x; // pixel index
+	int i = (HEIGHT - y - 1) * WIDTH + x; // pixel index
 	output[i] = make_float3(x, y, fcolour.c);
 }
 
@@ -460,6 +439,7 @@ void cudaInit(GLuint vbo) {
 
 	//register VBO with CUDA
 	cudaGLRegisterBufferObject(vbo);
+	printf("CUDA initialized\n");
 }
 
 void cudaCleanup() {
@@ -470,7 +450,7 @@ void launchKernel(GLuint vbo, uint rand, Camera* cam, Light* light) {
 	// map vertex buffer object for access by CUDA 
 	cudaGLMapBufferObject((void**)&g_rgbBuffer, vbo);
 
-	dim3 blockSize(32, 32, 1);
+	dim3 blockSize(16, 16, 1);
 	dim3 gridSize((int)ceil((float)WIDTH / blockSize.x), (int)ceil((float)HEIGHT / blockSize.y));
 
 	float time;
@@ -480,11 +460,11 @@ void launchKernel(GLuint vbo, uint rand, Camera* cam, Light* light) {
 	cudaEventRecord(start, 0);
 
 	// launch CUDA path tracing kernel, pass in a hashed seed based on number of passes
-	render_kernel << < gridSize, blockSize >> >(g_rgbBuffer, rand,
-												make_float3(cam->position().x, cam->position().y, cam->position().z),
-												make_float3(cam->forward().x, cam->forward().y, cam->forward().z),
-												make_float3(cam->up().x, cam->up().y, cam->up().z),
-												*light);
+	render_kernel << < gridSize, blockSize >> > (g_rgbBuffer, rand,
+		make_float3(cam->position().x, cam->position().y, cam->position().z),
+		make_float3(cam->forward().x, cam->forward().y, cam->forward().z),
+		make_float3(cam->up().x, cam->up().y, cam->up().z),
+		*light);
 
 	cudaEventRecord(stop, 0);
 	cudaEventSynchronize(stop);

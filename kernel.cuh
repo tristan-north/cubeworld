@@ -7,4 +7,4 @@ struct Light;
 
 void cudaInit(GLuint vbo);
 void cudaCleanup();
-void launchKernel(GLuint vbo, uint rand, Camera* cam, Light *light);
+void launchKernel(GLuint vbo, uint rand, Camera* cam, Light* light);
